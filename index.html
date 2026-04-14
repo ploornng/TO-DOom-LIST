@@ -1081,10 +1081,34 @@
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+
+  // ── AUTO WEEKLY BACKUP ──
+  function checkAutoBackup() {
+    const INTERVAL = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
+    const last = parseInt(localStorage.getItem('lastAutoBackup') || '0');
+    const now  = Date.now();
+
+    if (now - last >= INTERVAL) {
+      // Trigger download
+      const data = { projects, tasks, exportedAt: new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'todolist-backup-' + new Date().toISOString().slice(0,10) + '.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      localStorage.setItem('lastAutoBackup', now.toString());
+
+      // Show toast
+      showToast('📦 Weekly backup downloaded!');
+    }
+  }
+
   // ── BOOT ──
   window.addEventListener('resize', () => requestAnimationFrame(applyMasonry));
   renderSidebar();
   selectProject('__all__');
+  setTimeout(checkAutoBackup, 2000);
 </script>
 
 <!-- EDIT MODAL -->
