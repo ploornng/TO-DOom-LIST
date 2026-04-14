@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>✅ TO DO(OM) LIST</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1e3a5f" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="TO DO(OM)" />
+  <link rel="apple-touch-icon" href="icon-192.svg" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23ff4757'/><text y='.9em' font-size='75' x='12'>✅</text></svg>" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f0f4f8;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      width: 100%;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 230px; min-width: 230px;
+      background: #1e3a5f;
+      display: flex; flex-direction: column;
+      padding: 28px 0 20px;
+      height: 100vh;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .sidebar-title { color:#fff; font-size:1.1rem; font-weight:700; padding:0 20px 20px; letter-spacing:.02em; }
+    .sidebar-section { font-size:.68rem; text-transform:uppercase; letter-spacing:.1em; color:#4a6fa5; padding:0 20px 8px; font-weight:700; }
+
+    .proj-item {
+      display:flex; align-items:center; gap:10px;
+      padding:9px 20px; cursor:pointer;
+      transition:background .15s;
+      border-left:3px solid transparent; user-select:none;
+    }
+    .proj-item:hover { background:rgba(255,255,255,.07); }
+    .proj-item.active { background:rgba(59,130,246,.2); border-left-color:#3b82f6; }
+    .proj-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .proj-name { flex:1; font-size:.88rem; color:#ccc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .proj-item.active .proj-name { color:#fff; font-weight:600; }
+    .proj-count { font-size:.7rem; background:rgba(255,255,255,.1); color:#888; border-radius:10px; padding:1px 7px; }
+    .proj-item.active .proj-count { background:rgba(59,130,246,.4); color:#bfdbfe; }
+    .proj-delete { background:none; border:none; color:#444; cursor:pointer; font-size:.8rem; padding:0 2px; transition:color .15s; display:none; }
+    .proj-item:hover .proj-delete { display:block; }
+    .proj-delete:hover { color:#e74c3c; }
+
+    .add-project-area { padding:12px 16px 0; margin-top:4px; }
+    .add-project-row { display:flex; gap:6px; align-items:center; width:100%; overflow:hidden; }
+    .add-project-row input {
+      flex:1; min-width:0; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
+      border-radius:7px; padding:7px 10px; font-size:.82rem; color:#fff; outline:none; transition:border-color .2s;
+    }
+    .add-project-row input::placeholder { color:#555; }
+    .add-project-row input:focus { border-color:#3b82f6; }
+    .add-project-btn {
+      background:#3b82f6; border:none; border-radius:7px; color:white;
+      font-size:1rem; width:30px; height:30px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; transition:background .15s; flex-shrink:0;
+    }
+    .add-project-btn:hover { background:#2563eb; }
+
+    #projectList { overflow-y:auto; max-height:200px; }
+    .sidebar-spacer { flex:1; }
+    .sidebar-actions { display:flex; gap:8px; padding:14px 20px 0; }
+    .sideact-btn {
+      flex:1; padding:7px 0; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
+      border-radius:8px; color:#aaa; font-size:.75rem; font-weight:600; cursor:pointer;
+      text-align:center; transition:background .15s,color .15s;
+    }
+    .sideact-btn:hover { background:rgba(59,130,246,.25); color:#fff; }
+    .sidebar-date { padding:16px 20px 0; font-size:.72rem; color:#6b8cae; line-height:1.5; }
+
+    /* ── MAIN ── */
+    .main { flex:1; padding:32px 28px 0; overflow:hidden; min-width:0; display:flex; flex-direction:column; height:100vh; }
+    #mainContent { display:flex; flex-direction:column; flex:1; overflow:hidden; }
+    .main-header { display:flex; align-items:center; gap:10px; margin-bottom:4px; flex-shrink:0; }
+    .main-proj-dot { width:13px; height:13px; border-radius:50%; flex-shrink:0; }
+    .main-title { font-size:1.3rem; font-weight:700; color:#1e3a5f; flex:1; }
+    .print-btn {
+      padding:8px 18px; background:white; border:2px solid #e0e0e0;
+      border-radius:9px; font-size:.82rem; font-weight:600; color:#888;
+      cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:6px;
+    }
+    .print-btn:hover { border-color:#3b82f6; color:#3b82f6; }
+
+    .subtitle { color:#aaa; font-size:.78rem; margin-bottom:8px; margin-left:22px; flex-shrink:0; }
+
+    /* INPUT FRAME */
+    .input-frame { background:white; border-radius:10px; padding:8px 12px; box-shadow:0 1px 6px rgba(0,0,0,.06); margin-bottom:8px; flex-shrink:0; }
+    .input-frame h2 { display:none; }
+    .input-row { display:none; }
+    .input-row input[type="text"] {
+      flex:1; padding:10px 14px; border:2px solid #e8e8e8; border-radius:9px;
+      font-size:.95rem; outline:none; transition:border-color .2s;
+    }
+    .input-row input[type="text"]:focus { border-color:#3b82f6; }
+    .meta-row { display:flex; gap:6px; align-items:center; flex-wrap:nowrap; }
+    .meta-row select, .meta-row input[type="date"] {
+      padding:5px 8px; border:1.5px solid #e8e8e8; border-radius:7px;
+      font-size:.78rem; outline:none; background:#fafafa; color:#444; cursor:pointer; transition:border-color .2s;
+    }
+    .meta-row select:focus, .meta-row input[type="date"]:focus { border-color:#3b82f6; }
+    .meta-row input[type="text"] {
+      flex:1; min-width:0; padding:6px 10px; border:1.5px solid #e8e8e8; border-radius:7px;
+      font-size:.85rem; outline:none; transition:border-color .2s;
+    }
+    .meta-row input[type="text"]:focus { border-color:#3b82f6; }
+    .add-btn {
+      padding:6px 14px; background:#3b82f6; color:white;
+      border:none; border-radius:7px; font-size:.82rem; font-weight:600;
+      cursor:pointer; transition:background .2s,transform .1s; white-space:nowrap;
+    }
+    .add-btn:hover { background:#2563eb; }
+    .add-btn:active { transform:scale(.97); }
+
+    /* FILTER + CONTROLS */
+    .filter-bar { display:flex; gap:5px; margin-bottom:6px; flex-wrap:wrap; flex-shrink:0; }
+    .filter-btn {
+      padding:3px 11px; border-radius:20px; border:1.5px solid #e0e0e0;
+      background:white; font-size:.73rem; font-weight:600; color:#888; cursor:pointer; transition:all .15s;
+    }
+    .filter-btn.active { background:#3b82f6; border-color:#3b82f6; color:white; }
+    .filter-btn:hover:not(.active) { border-color:#3b82f6; color:#3b82f6; }
+
+    .controls-bar {
+      background:white; border-radius:8px; padding:5px 10px;
+      display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+      margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,.04);
+      flex-shrink:0;
+    }
+    .controls-bar label { font-size:.68rem; color:#bbb; font-weight:700; text-transform:uppercase; letter-spacing:.06em; white-space:nowrap; }
+    .controls-bar select, .controls-bar input[type="date"] {
+      padding:4px 7px; border:1.5px solid #e8e8e8; border-radius:6px;
+      font-size:.75rem; outline:none; background:#fafafa; color:#444; cursor:pointer; transition:border-color .2s;
+    }
+    .controls-bar select:focus, .controls-bar input[type="date"]:focus { border-color:#3b82f6; }
+    .sep { width:1px; height:20px; background:#ececec; margin:0 2px; }
+    .clear-btn {
+      padding:3px 8px; background:none; border:1.5px solid #e0e0e0;
+      border-radius:6px; font-size:.72rem; color:#bbb; cursor:pointer; transition:all .15s; white-space:nowrap;
+    }
+    .clear-btn:hover { border-color:#e74c3c; color:#e74c3c; }
+
+    /* TASK LIST */
+    .task-list { list-style:none; overflow-y:auto; flex:1; padding-right:4px; position:relative; }
+    .task-item {
+      background:white; border-radius:10px; padding:10px 10px 10px 0;
+      box-shadow:0 1px 6px rgba(0,0,0,.06);
+      transition:box-shadow .15s;
+      border-left:4px solid #e0e0e0;
+      overflow:visible;
+      min-width:0; word-break:break-word;
+      position:absolute;
+    }
+    .task-item:hover { box-shadow:0 3px 12px rgba(0,0,0,.10); }
+    .task-item.priority-high   { border-left-color:#e74c3c; }
+    .task-item.priority-medium { border-left-color:#e17c00; }
+    .task-item.priority-low    { border-left-color:#27ae60; }
+    .task-item.priority-none   { border-left-color:#3b82f6; }
+    .task-item.done > .task-row { opacity:.4; }
+    .task-row { display:flex; align-items:flex-start; gap:7px; padding-left:10px; }
+    .task-item input[type="checkbox"] { width:14px; height:14px; accent-color:#3b82f6; cursor:pointer; flex-shrink:0; margin-top:2px; }
+    .task-body { flex:1; min-width:0; overflow:hidden; }
+    .task-text { font-size:.82rem; color:#1e3a5f; font-weight:600; word-break:break-word; overflow-wrap:anywhere; line-height:1.35; }
+    .task-item.done .task-text { text-decoration:line-through; color:#bbb; font-weight:400; }
+    .task-meta { display:flex; gap:4px; margin-top:4px; flex-wrap:wrap; align-items:center; min-width:0; }
+
+    .badge { font-size:.62rem; padding:1px 6px; border-radius:20px; font-weight:600; white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+    .badge.high   { background:#ffe5e5; color:#d63031; }
+    .badge.medium { background:#fff3cd; color:#e17c00; }
+    .badge.low    { background:#e8f5e9; color:#27ae60; }
+    .badge.date   { background:#dbeafe; color:#3b82f6; }
+    .badge.overdue{ background:#ffe5e5; color:#d63031; }
+    .badge.today  { background:#fff3cd; color:#e17c00; }
+
+    .task-actions { display:flex; align-items:flex-start; gap:2px; flex-shrink:0; padding-top:1px; }
+    .icon-btn {
+      background:none; border:none; color:#ddd; font-size:.75rem;
+      cursor:pointer; padding:2px 4px; border-radius:5px; transition:color .15s,background .15s;
+    }
+    .icon-btn:hover { color:#3b82f6; background:#dbeafe; }
+    .icon-btn.del:hover { color:#e74c3c; background:#fff0f0; }
+
+    /* SUBTASKS */
+    .subtask-section { margin-top:8px; padding-left:16px; border-left:2px solid #f0f0f0; margin-left:2px; }
+    .subtask-list { list-style:none; margin-bottom:8px; }
+    .subtask-item {
+      display:flex; align-items:center; gap:8px;
+      padding:6px 0; border-bottom:1px solid #f8f8f8;
+    }
+    .subtask-item:last-child { border-bottom:none; }
+    .subtask-item input[type="checkbox"] { width:14px; height:14px; accent-color:#3b82f6; cursor:pointer; flex-shrink:0; }
+    .subtask-body { flex:1; min-width:0; }
+    .subtask-text { font-size:.76rem; color:#444; }
+    .subtask-item.done .subtask-text { text-decoration:line-through; color:#ccc; }
+    .subtask-due { font-size:.68rem; margin-top:2px; }
+    .subtask-due.date    { color:#3b82f6; }
+    .subtask-due.today   { color:#e17c00; }
+    .subtask-due.overdue { color:#d63031; }
+    .subtask-del { background:none; border:none; color:#ddd; font-size:.75rem; cursor:pointer; padding:1px 4px; border-radius:4px; transition:color .15s; flex-shrink:0; }
+    .subtask-del:hover { color:#e74c3c; }
+
+    .subtask-progress { font-size:.7rem; color:#aaa; margin-bottom:6px; }
+    .subtask-progress-bar { height:3px; background:#f0f0f0; border-radius:3px; margin-bottom:8px; overflow:hidden; }
+    .subtask-progress-fill { height:100%; background:#6c63ff; border-radius:3px; transition:width .3s; }
+
+    .add-subtask-row { display:flex; gap:6px; }
+    .add-subtask-row input[type="text"] {
+      flex:1; padding:5px 9px; border:1px solid #e8e8e8; border-radius:7px;
+      font-size:.8rem; outline:none; transition:border-color .2s; background:#fafafa; color:#444;
+    }
+    .add-subtask-row input[type="text"]:focus { border-color:#3b82f6; }
+    .sub-date-input {
+      padding:5px 7px; border:1px solid #e8e8e8; border-radius:7px;
+      font-size:.78rem; outline:none; color:#444; background:#fafafa; transition:border-color .2s;
+    }
+    .sub-date-input:focus { border-color:#3b82f6; }
+    .add-subtask-btn {
+      padding:5px 10px; background:#3b82f6; color:white; border:none;
+      border-radius:7px; font-size:.8rem; cursor:pointer; transition:background .15s;
+    }
+    .add-subtask-btn:hover { background:#2563eb; }
+
+    .empty { text-align:center; color:#ccc; padding:50px 0; font-size:.92rem; width:100%; position:static; }
+    .done-divider {
+      position:absolute; left:0; right:0;
+      display:flex; align-items:center; gap:10px;
+      font-size:.7rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; color:#ccc; pointer-events:none;
+    }
+    .done-divider::before, .done-divider::after {
+      content:''; flex:1; height:1px; background:#e8e8e8;
+    }
+    .stats { font-size:.78rem; color:#bbb; text-align:right; padding:8px 0 16px; flex-shrink:0; }
+    .no-proj { text-align:center; padding:80px 20px; color:#ccc; }
+    .no-proj h2 { font-size:1.1rem; margin-bottom:8px; color:#bbb; }
+
+
+    /* ── EDIT MODAL ── */
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,.45);
+      display:flex; align-items:center; justify-content:center;
+      z-index:1000; animation:fadeIn .15s;
+    }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .modal {
+      background:white; border-radius:16px; padding:24px;
+      width:460px; max-width:95vw; box-shadow:0 8px 40px rgba(0,0,0,.2);
+      animation:slideUp .15s;
+    }
+    @keyframes slideUp { from{transform:translateY(12px);opacity:0} to{transform:translateY(0);opacity:1} }
+    .modal h3 { font-size:1rem; font-weight:700; color:#1e3a5f; margin-bottom:16px; }
+    .modal-field { margin-bottom:12px; }
+    .modal-field label { display:block; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#aaa; margin-bottom:5px; }
+    .modal-field input[type="text"],
+    .modal-field input[type="date"],
+    .modal-field select {
+      width:100%; padding:9px 12px; border:2px solid #e8e8e8; border-radius:9px;
+      font-size:.9rem; outline:none; transition:border-color .2s; font-family:inherit;
+    }
+    .modal-field input:focus, .modal-field select:focus { border-color:#3b82f6; }
+    .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:18px; }
+    .modal-cancel {
+      padding:9px 18px; background:none; border:2px solid #e0e0e0;
+      border-radius:9px; font-size:.88rem; color:#888; cursor:pointer; transition:all .15s;
+    }
+    .modal-cancel:hover { border-color:#aaa; color:#444; }
+    .modal-save {
+      padding:9px 22px; background:#3b82f6; color:white; border:none;
+      border-radius:9px; font-size:.88rem; font-weight:600; cursor:pointer; transition:background .15s;
+    }
+    .modal-save:hover { background:#2563eb; }
+
+    /* ── PRINT STYLES ── */
+    @media print {
+      @page { margin: 20mm 18mm; }
+
+      html, body { background:white; display:block; height:auto; overflow:visible; width:auto; }
+      .sidebar, .input-frame, .filter-bar, .controls-bar,
+      .task-actions, .add-subtask-row, .subtask-del,
+      .print-btn, .stats { display:none !important; }
+
+      .main { padding:0; height:auto; overflow:visible; display:block; }
+      .main-header { margin-bottom:4px; }
+      .main-proj-dot { display:none; }
+      .main-title { font-size:1.3rem; color:#000; }
+      .subtitle { margin-left:0; color:#555; margin-bottom:16px; }
+
+      .task-item {
+        box-shadow:none; border:1px solid #e0e0e0;
+        border-radius:6px; margin-bottom:8px; padding:10px 12px 10px 0;
+        break-inside:avoid;
+      }
+      .task-item.priority-high   { border-left:4px solid #e74c3c !important; }
+      .task-item.priority-medium { border-left:4px solid #e17c00 !important; }
+      .task-item.priority-low    { border-left:4px solid #27ae60 !important; }
+      .task-item.priority-none   { border-left:4px solid #6c63ff !important; }
+      .task-item { position:static !important; width:100% !important; margin-bottom:8px !important; }
+      .task-item.done { opacity:.5; }
+      .task-text { font-size:.9rem; color:#000; }
+      .badge { border:1px solid currentColor; }
+      .subtask-section { border-left:1px solid #ddd; }
+      .subtask-text { color:#333; font-size:.8rem; }
+      .subtask-progress-bar { display:none; }
+
+      /* Print header */
+      .print-header { display:block !important; }
+    }
+    .print-header {
+      display:none;
+      text-align:right; font-size:.75rem; color:#888;
+      margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:8px;
+    }
+
+    /* ── PROGRESS RING ── */
+    .proj-ring { position:relative; width:28px; height:28px; flex-shrink:0; }
+    .proj-ring svg { transform:rotate(-90deg); }
+    .proj-ring .ring-bg  { fill:none; stroke:rgba(255,255,255,.08); stroke-width:3; }
+    .proj-ring .ring-fill{ fill:none; stroke-width:3; stroke-linecap:round; transition:stroke-dashoffset .4s; }
+    .proj-ring .ring-dot { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:.55rem; font-weight:700; color:#aaa; }
+
+    /* ── OVERDUE BADGE ── */
+    .proj-overdue { font-size:.62rem; background:#e74c3c; color:#fff; border-radius:8px; padding:1px 5px; font-weight:700; margin-left:2px; }
+
+    /* ── RECUR BADGE ── */
+    .badge.recur { background:#e8f5e9; color:#27ae60; }
+
+    /* ── TOAST UNDO ── */
+    #toastUndo {
+      position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
+      background:#1e3a5f; color:#fff; padding:10px 20px; border-radius:10px;
+      font-size:.85rem; display:flex; align-items:center; gap:14px;
+      box-shadow:0 4px 20px rgba(0,0,0,.3); transition:transform .25s; z-index:9999;
+    }
+    #toastUndo.show { transform:translateX(-50%) translateY(0); }
+    #toastUndo button { background:#3b82f6; border:none; color:#fff; padding:4px 12px; border-radius:6px; cursor:pointer; font-size:.8rem; }
+
+    /* ── ARCHIVE BUTTON ── */
+    .archive-btn {
+      padding:3px 10px; background:none; border:1.5px solid #e0e0e0;
+      border-radius:6px; font-size:.72rem; color:#bbb; cursor:pointer;
+      transition:all .15s; white-space:nowrap;
+    }
+    .archive-btn:hover { border-color:#3b82f6; color:#3b82f6; }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-title">📋 My Projects</div>
+  <div class="sidebar-section">Projects</div>
+
+  <div class="proj-item active" id="all-proj-item" onclick="selectProject('__all__')">
+    <div class="proj-dot" style="background:#6c63ff"></div>
+    <span class="proj-name">All Tasks</span>
+    <span class="proj-overdue" id="overdue-all" style="display:none"></span>
+    <span class="proj-count" id="count-all"></span>
+  </div>
+  <div id="projectList"></div>
+
+  <div class="add-project-area">
+    <div class="add-project-row">
+      <input type="text" id="newProjInput" placeholder="New project…" maxlength="32" />
+      <button class="add-project-btn" onclick="addProject()">+</button>
+    </div>
+  </div>
+
+  <div class="sidebar-spacer"></div>
+  <div class="sidebar-actions">
+    <button class="sideact-btn" onclick="exportData()">⬇ Export</button>
+    <label class="sideact-btn" style="cursor:pointer">
+      ⬆ Import
+      <input type="file" accept=".json" onchange="importData(event)" style="display:none" />
+    </label>
+  </div>
+  <div class="sidebar-date" id="sidebarDate"></div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div id="mainContent">
+    <div class="no-proj">
+      <h2>👈 Select a project</h2>
+      <p>Pick a project from the sidebar, or create one to get started.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  let projects = JSON.parse(localStorage.getItem('projects') || '[]');
+  let tasks    = JSON.parse(localStorage.getItem('tasks')    || '[]');
+  // migrate: ensure subtasks array exists
+  tasks.forEach(t => {
+    if (!t.subtasks) t.subtasks = [];
+    t.subtasks.forEach(s => { if (!s.dueDate) s.dueDate = ''; });
+    if (!t.recur) t.recur = '';
+    if (t.archived === undefined) t.archived = false;
+  });
+
+  let currentProject = '__all__';
+  let currentFilter  = 'all';
+  let lastDeleted = null;
+  let toastTimer  = null;
+
+  const COLORS = ['#6c63ff','#e74c3c','#e17c00','#27ae60','#1565c0','#ad1457','#6a1b9a','#00838f','#f39c12','#555'];
+
+  document.getElementById('sidebarDate').textContent = new Date().toLocaleDateString('en-US', {
+    weekday:'long', month:'long', day:'numeric'
+  });
+
+  document.getElementById('newProjInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addProject();
+  });
+
+  // ── PERSIST ──
+  function saveAll() {
+    localStorage.setItem('projects', JSON.stringify(projects));
+    localStorage.setItem('tasks',    JSON.stringify(tasks));
+  }
+
+  // ── PROJECTS ──
+  function addProject() {
+    const name = document.getElementById('newProjInput').value.trim();
+    if (!name) return;
+    projects.push({ id: Date.now(), name, color: COLORS[Math.floor(Math.random()*COLORS.length)] });
+    document.getElementById('newProjInput').value = '';
+    saveAll(); renderSidebar();
+    selectProject(projects[projects.length-1].id);
+  }
+
+  function deleteProject(id) {
+    if (!confirm('Delete project and all its tasks?')) return;
+    projects = projects.filter(p => p.id !== id);
+    tasks    = tasks.filter(t => t.projectId !== id);
+    saveAll();
+    if (currentProject === id) selectProject('__all__');
+    else renderSidebar();
+  }
+
+  function selectProject(id) {
+    currentProject = id; currentFilter = 'all';
+    document.querySelectorAll('.proj-item').forEach(el => el.classList.remove('active'));
+    const el = id === '__all__'
+      ? document.getElementById('all-proj-item')
+      : document.getElementById('proj-' + id);
+    if (el) el.classList.add('active');
+    renderMain();
+  }
+
+  function makeRing(color, pct) {
+    const r = 11, c = 14, circ = 2 * Math.PI * r;
+    const offset = circ - (pct / 100) * circ;
+    return `<div class="proj-ring">
+      <svg width="28" height="28" viewBox="0 0 28 28">
+        <circle class="ring-bg"   cx="${c}" cy="${c}" r="${r}"/>
+        <circle class="ring-fill" cx="${c}" cy="${c}" r="${r}"
+          stroke="${color}"
+          stroke-dasharray="${circ.toFixed(1)}"
+          stroke-dashoffset="${offset.toFixed(1)}"/>
+      </svg>
+      <div class="ring-dot">${pct}%</div>
+    </div>`;
+  }
+
+  function renderSidebar() {
+    const today = new Date().toISOString().slice(0,10);
+    const list  = document.getElementById('projectList');
+    list.innerHTML = projects.map(p => {
+      const projTasks   = tasks.filter(t => t.projectId === p.id && !t.archived);
+      const activeCount = projTasks.filter(t => !t.done).length;
+      const doneCount   = projTasks.filter(t =>  t.done).length;
+      const total       = projTasks.length;
+      const pct         = total ? Math.round(doneCount/total*100) : 0;
+      const overdueCount= projTasks.filter(t => !t.done && t.dueDate && t.dueDate < today).length;
+      const ring        = makeRing(p.color, pct);
+      const overdueBadge= overdueCount ? `<span class="proj-overdue">${overdueCount}</span>` : '';
+      return `
+      <div class="proj-item ${currentProject === p.id ? 'active' : ''}" id="proj-${p.id}" onclick="selectProject(${p.id})">
+        ${ring}
+        <span class="proj-name">${escHtml(p.name)}</span>
+        ${overdueBadge}
+        <span class="proj-count">${activeCount||''}</span>
+        <button class="proj-delete" onclick="event.stopPropagation();deleteProject(${p.id})">✕</button>
+      </div>`;
+    }).join('');
+    // All Tasks counts
+    const allActive  = tasks.filter(t => !t.done && !t.archived).length;
+    const allOverdue = tasks.filter(t => !t.done && !t.archived && t.dueDate && t.dueDate < today).length;
+    document.getElementById('count-all').textContent = allActive || '';
+    const allOverdueEl = document.getElementById('overdue-all');
+    if (allOverdueEl) allOverdueEl.textContent = allOverdue || '';
+    allOverdueEl && (allOverdueEl.style.display = allOverdue ? '' : 'none');
+  }
+
+  // ── MAIN ──
+  function renderMain() {
+    const isAll = currentProject === '__all__';
+    const proj  = isAll ? null : projects.find(p => p.id === currentProject);
+    if (!isAll && !proj) {
+      document.getElementById('mainContent').innerHTML =
+        `<div class="no-proj"><h2>👈 Select a project</h2></div>`;
+      return;
+    }
+    const color = isAll ? '#6c63ff' : proj.color;
+    const title = isAll ? 'All Tasks' : proj.name;
+    const projOptions = projects.map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
+
+    document.getElementById('mainContent').innerHTML = `
+      <div class="print-header" id="printHeader"></div>
+      <div class="main-header">
+        <div class="main-proj-dot" style="background:${color}"></div>
+        <div class="main-title">${escHtml(title)}</div>
+        <button class="print-btn" onclick="printView()">🖨 Print</button>
+      </div>
+      <div class="subtitle" id="subtitleLine"></div>
+
+      <div class="input-frame">
+        <div class="meta-row">
+          <input type="text" id="taskInput" placeholder="" />
+          <select id="prioritySelect">
+            <option value="">Priority</option>
+            <option value="high">🔴 High</option>
+            <option value="medium">🟡 Medium</option>
+            <option value="low">🟢 Low</option>
+          </select>
+          ${isAll && projects.length ? `
+          <select id="projAssign">
+            <option value="">No project</option>${projOptions}
+          </select>` : ''}
+          <input type="date" id="dueDateInput" title="Due date" />
+          <select id="recurSelect" title="Recurring">
+            <option value="">No repeat</option>
+            <option value="daily">🔁 Daily</option>
+            <option value="weekly">🔁 Weekly</option>
+            <option value="monthly">🔁 Monthly</option>
+          </select>
+          <button class="add-btn" onclick="addTask()">+ Add</button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+        <button class="filter-btn" onclick="setFilter('active',this)">Active</button>
+        <button class="filter-btn" onclick="setFilter('done',this)">Done</button>
+        <button class="filter-btn" onclick="setFilter('overdue',this)">⚠️ Overdue</button>
+        <button class="filter-btn" onclick="setFilter('high',this)">🔴 High</button>
+        <button class="archive-btn" onclick="archiveDone()" title="Move all completed tasks to archive">📦 Archive done</button>
+      </div>
+
+      <div class="controls-bar">
+        <label>Sort:</label>
+        <select id="sortSelect" onchange="renderTaskList()">
+          <option value="urgency" selected>⚡ Urgency</option>
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="due-asc">Due date ↑</option>
+          <option value="due-desc">Due date ↓</option>
+          <option value="priority">Priority</option>
+        </select>
+        <div class="sep"></div>
+        <label>Due from:</label>
+        <input type="date" id="filterFrom" onchange="renderTaskList()" />
+        <label>to:</label>
+        <input type="date" id="filterTo" onchange="renderTaskList()" />
+        <button class="clear-btn" onclick="clearDates()">✕ Clear</button>
+      </div>
+
+      <ul class="task-list" id="taskList"></ul>
+      <p class="stats" id="stats"></p>
+    `;
+
+    const FUNNY_PLACEHOLDERS = [
+      "Oh wow, another thing you won't finish today 🙃",
+      "Type it here so you can panic about it later 😌",
+      "Sure, add more. Your future self LOVES suffering 💅",
+      "Task #47 of the day. Totally manageable. 🫠",
+      "Ah yes, more work. Just what you needed 🥲",
+      "Go ahead, pretend this one will get done today 🎪",
+      "Another task! Aren't you just thriving 🌟",
+      "Write it down. Ignore it. Classic workflow. 📋",
+      "Yes, yes, add it. The list wasn't long enough anyway 😒",
+      "Feel free to add this to your never-ending pile 🗑️",
+      "Ooh a new task! How exciting. No really. Thrilling. 😐",
+      "Don't worry, you'll do it right before the deadline 🔥",
+      "Type something. Or don't. The chaos is already here 🌪️",
+      "Add task so you can feel guilty about it later 👍",
+      "Wow look at you, being so organized and stuff 🏆",
+      "Sure, one more. The list was getting too short anyway 📜",
+      "Another day, another task you'll reschedule tomorrow ⏰",
+      "Congratulations! You're voluntarily adding more work 🎉",
+      "Go on then. Add it. You know you want to 😈",
+      "Productivity is just organized procrastination anyway 🧘",
+    ];
+
+    function setRandomPlaceholder() {
+      const el = document.getElementById('taskInput');
+      if (el) el.placeholder = FUNNY_PLACEHOLDERS[Math.floor(Math.random()*FUNNY_PLACEHOLDERS.length)];
+    }
+    setRandomPlaceholder();
+
+    document.getElementById('taskInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') addTask();
+    });
+    renderTaskList();
+    updateSubtitle();
+  }
+
+  function updateSubtitle() {
+    const el = document.getElementById('subtitleLine');
+    if (!el) return;
+    const isAll = currentProject === '__all__';
+    const scoped = isAll ? tasks : tasks.filter(t => t.projectId === currentProject);
+    const done = scoped.filter(t => t.done).length;
+    el.textContent = scoped.length ? `${done} of ${scoped.length} tasks completed` : 'No tasks yet';
+  }
+
+  // ── PRINT ──
+  function printView() {
+    const isAll = currentProject === '__all__';
+    const proj  = isAll ? null : projects.find(p => p.id === currentProject);
+    const title = isAll ? 'All Tasks' : (proj ? proj.name : 'Tasks');
+    const ph = document.getElementById('printHeader');
+    if (ph) {
+      ph.textContent = `Printed on ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})} — ${title}`;
+    }
+    window.print();
+  }
+
+  // ── TASKS ──
+  function addTask() {
+    const text = document.getElementById('taskInput').value.trim();
+    if (!text) return;
+    const isAll = currentProject === '__all__';
+    let projId = isAll ? null : currentProject;
+    if (isAll) {
+      const pa = document.getElementById('projAssign');
+      if (pa && pa.value) projId = parseInt(pa.value);
+    }
+    tasks.unshift({
+      id: Date.now(), text,
+      priority: document.getElementById('prioritySelect').value,
+      dueDate:  document.getElementById('dueDateInput').value,
+      projectId: projId,
+      subtasks: [],
+      done: false,
+      recur: (document.getElementById('recurSelect') ? document.getElementById('recurSelect').value : ''),
+      archived: false,
+      createdAt: new Date().toISOString()
+    });
+    document.getElementById('taskInput').value = '';
+    setRandomPlaceholder();
+    document.getElementById('prioritySelect').value = '';
+    document.getElementById('dueDateInput').value = '';
+    const pa = document.getElementById('projAssign');
+    if (pa) pa.value = '';
+    saveAll(); renderSidebar(); renderTaskList(); updateSubtitle();
+  }
+
+  function toggleDone(id) {
+    const t = tasks.find(t => t.id === id);
+    if (!t) return;
+    t.done = !t.done;
+    // Handle recurring: when marked done, create next occurrence
+    if (t.done && t.recur && t.dueDate) {
+      const d = new Date(t.dueDate);
+      if (t.recur === 'daily')   d.setDate(d.getDate() + 1);
+      if (t.recur === 'weekly')  d.setDate(d.getDate() + 7);
+      if (t.recur === 'monthly') d.setMonth(d.getMonth() + 1);
+      tasks.unshift({
+        id: Date.now(), text: t.text, priority: t.priority,
+        dueDate: d.toISOString().slice(0,10), projectId: t.projectId,
+        subtasks: [], recur: t.recur, archived: false, done: false,
+        createdAt: new Date().toISOString()
+      });
+    }
+    saveAll(); renderSidebar(); renderTaskList(); updateSubtitle();
+  }
+
+  function deleteTask(id) {
+    lastDeleted = tasks.find(t => t.id === id);
+    tasks = tasks.filter(t => t.id !== id);
+    saveAll(); renderSidebar(); renderTaskList(); updateSubtitle();
+    showToast('Task deleted');
+  }
+
+  function undoDelete() {
+    if (!lastDeleted) return;
+    tasks.unshift(lastDeleted);
+    lastDeleted = null;
+    saveAll(); renderSidebar(); renderTaskList(); updateSubtitle();
+    hideToast();
+  }
+
+  function showToast(msg) {
+    const el = document.getElementById('toastUndo');
+    document.getElementById('toastMsg').textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, 4000);
+  }
+
+  function hideToast() {
+    document.getElementById('toastUndo').classList.remove('show');
+  }
+
+  // ── SUBTASKS ──
+  function addSubtask(taskId) {
+    const input    = document.getElementById('sub-input-' + taskId);
+    const dateInp  = document.getElementById('sub-date-' + taskId);
+    const text     = input.value.trim();
+    if (!text) return;
+    const t = tasks.find(t => t.id === taskId);
+    if (!t) return;
+    if (!t.subtasks) t.subtasks = [];
+    t.subtasks.push({ id: Date.now(), text, dueDate: dateInp ? dateInp.value : '', done: false });
+    input.value = '';
+    if (dateInp) dateInp.value = '';
+    saveAll(); renderTaskList();
+  }
+
+  function toggleSubtask(taskId, subId) {
+    const t = tasks.find(t => t.id === taskId);
+    if (!t) return;
+    const s = t.subtasks.find(s => s.id === subId);
+    if (s) { s.done = !s.done; saveAll(); renderTaskList(); updateSubtitle(); }
+  }
+
+  function deleteSubtask(taskId, subId) {
+    const t = tasks.find(t => t.id === taskId);
+    if (!t) return;
+    t.subtasks = t.subtasks.filter(s => s.id !== subId);
+    saveAll(); renderTaskList();
+  }
+
+  function toggleSubtaskSection(taskId) {
+    const el = document.getElementById('subtask-section-' + taskId);
+    if (!el) return;
+    const isHidden = window.getComputedStyle(el).display === 'none';
+    el.style.display = isHidden ? 'block' : 'none';
+  }
+
+  // ── FILTERS / SORT ──
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTaskList();
+  }
+
+  function clearDates() {
+    document.getElementById('filterFrom').value = '';
+    document.getElementById('filterTo').value   = '';
+    renderTaskList();
+  }
+
+  function formatDate(d) {
+    if (!d) return '';
+    const [y,m,day] = d.split('-');
+    return `${day}/${m}/${y}`;
+  }
+
+  function getDateStatus(dueDate, done) {
+    if (!dueDate || done) return 'date';
+    const today = new Date().toISOString().slice(0,10);
+    if (dueDate < today)  return 'overdue';
+    if (dueDate === today) return 'today';
+    return 'date';
+  }
+
+  const priorityOrder = { high:0, medium:1, low:2, '':3 };
+
+  function buildTaskHTML(t, isAll) {
+      const today = new Date().toISOString().slice(0,10);
+      const proj = projects.find(p => p.id === t.projectId);
+      const ds   = getDateStatus(t.dueDate, t.done);
+      const daysLeftNum = (t.dueDate && !t.done)
+        ? Math.ceil((new Date(t.dueDate)-new Date(today))/86400000) : null;
+      const daysLabel = daysLeftNum===null ? ''
+        : daysLeftNum < 0  ? ` · ${Math.abs(daysLeftNum)}d overdue`
+        : daysLeftNum === 0 ? ' · today'
+        : ` · ${daysLeftNum}d left`;
+      const dateLabel = t.dueDate
+        ? `<span class="badge ${ds}">📅 ${formatDate(t.dueDate)}${daysLabel}</span>` : '';
+      const projBadge = (isAll && proj)
+        ? `<span class="badge" style="background:${proj.color}22;color:${proj.color}">● ${escHtml(proj.name)}</span>` : '';
+
+      const subs     = t.subtasks || [];
+      const subDone  = subs.filter(s=>s.done).length;
+      const subTotal = subs.length;
+      const pct      = subTotal ? Math.round(subDone/subTotal*100) : 0;
+      const subBadge = subTotal
+        ? `<span class="badge" style="background:#dbeafe;color:#3b82f6">☰ ${subDone}/${subTotal}</span>` : '';
+      const recurBadge = t.recur ? `<span class="badge recur">🔁 ${t.recur}</span>` : '';
+
+      const subtaskHTML = `
+        <div class="subtask-section" id="subtask-section-${t.id}">
+          ${subTotal ? `
+            <div class="subtask-progress">${subDone} of ${subTotal} subtasks done</div>
+            <div class="subtask-progress-bar"><div class="subtask-progress-fill" style="width:${pct}%"></div></div>
+          ` : ''}
+          <ul class="subtask-list">
+            ${subs.map(s => {
+              const sds = getDateStatus(s.dueDate, s.done);
+              const sdaysNum = (s.dueDate && !s.done)
+                ? Math.ceil((new Date(s.dueDate)-new Date(new Date().toISOString().slice(0,10)))/86400000) : null;
+              const sdaysLabel = sdaysNum===null ? ''
+                : sdaysNum < 0  ? `📅 ${formatDate(s.dueDate)} · ${Math.abs(sdaysNum)}d overdue`
+                : sdaysNum === 0 ? `📅 ${formatDate(s.dueDate)} · today`
+                : `📅 ${formatDate(s.dueDate)} · ${sdaysNum}d left`;
+              return `
+            <li class="subtask-item ${s.done?'done':''}">
+              <input type="checkbox" ${s.done?'checked':''} onchange="toggleSubtask(${t.id},${s.id})" />
+              <div class="subtask-body">
+                <div class="subtask-text">${escHtml(s.text)}</div>
+                ${sdaysLabel ? `<div class="subtask-due ${sds}">${sdaysLabel}</div>` : ''}
+              </div>
+              <button class="subtask-del" onclick="deleteSubtask(${t.id},${s.id})">✕</button>
+            </li>`;
+            }).join('')}
+          </ul>
+          <div class="add-subtask-row">
+            <input type="text" id="sub-input-${t.id}" placeholder="Add subtask…"
+              onkeydown="if(event.key==='Enter') addSubtask(${t.id})" />
+            <input type="date" id="sub-date-${t.id}" title="Subtask due date" class="sub-date-input" />
+            <button class="add-subtask-btn" onclick="addSubtask(${t.id})">+ Add</button>
+          </div>
+        </div>`;
+
+    return `
+      <li class="task-item ${t.done?'done':''} priority-${t.priority||'none'}">
+        <div class="task-row">
+          <input type="checkbox" ${t.done?'checked':''} onchange="toggleDone(${t.id})" />
+          <div class="task-body">
+            <div class="task-text">${escHtml(t.text)}</div>
+            <div class="task-meta">
+              ${t.priority === 'high'   ? '<span class="badge high">🔴 high</span>'   :
+                t.priority === 'medium' ? '<span class="badge medium">🟡 medium</span>' :
+                t.priority === 'low'    ? '<span class="badge low">🟢 low</span>'     : ''}
+              ${dateLabel}${projBadge}${subBadge}${recurBadge}
+            </div>
+          </div>
+          <div class="task-actions">
+            <button class="icon-btn" onclick="openEditModal(${t.id})" title="Edit">✏️</button>
+            <button class="icon-btn" onclick="toggleSubtaskSection(${t.id})" title="Subtasks">☰</button>
+            <button class="icon-btn del" onclick="deleteTask(${t.id})" title="Delete">✕</button>
+          </div>
+        </div>
+        ${subtaskHTML}
+      </li>`;
+  }
+
+  function renderTaskList() {
+    const list    = document.getElementById('taskList');
+    if (!list) return;
+    const sortVal = document.getElementById('sortSelect').value;
+    const fromVal = document.getElementById('filterFrom').value;
+    const toVal   = document.getElementById('filterTo').value;
+    const today   = new Date().toISOString().slice(0,10);
+    const isAll   = currentProject === '__all__';
+
+    let filtered = tasks.filter(t => {
+      if (t.archived) return false;
+      if (!isAll && t.projectId !== currentProject) return false;
+      if (currentFilter === 'active'  && t.done) return false;
+      if (currentFilter === 'done'    && !t.done) return false;
+      if (currentFilter === 'high'    && (t.priority !== 'high' || t.done)) return false;
+      if (currentFilter === 'overdue' && (t.done || !t.dueDate || t.dueDate >= today)) return false;
+      if (fromVal && (!t.dueDate || t.dueDate < fromVal)) return false;
+      if (toVal   && (!t.dueDate || t.dueDate > toVal))   return false;
+      return true;
+    });
+
+    const sortFn = (a,b) => {
+      if (sortVal==='newest')   return b.id - a.id;
+      if (sortVal==='oldest')   return a.id - b.id;
+      if (sortVal==='due-asc')  {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1; if (!b.dueDate) return -1;
+        return a.dueDate.localeCompare(b.dueDate);
+      }
+      if (sortVal==='due-desc') {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1; if (!b.dueDate) return -1;
+        return b.dueDate.localeCompare(a.dueDate);
+      }
+      if (sortVal==='urgency') {
+        const dl = d => d ? Math.ceil((new Date(d)-new Date(today))/86400000) : Infinity;
+        return dl(a.dueDate) - dl(b.dueDate);
+      }
+      if (sortVal==='priority') return (priorityOrder[a.priority]??3)-(priorityOrder[b.priority]??3);
+      return 0;
+    };
+
+    // Split active and done, sort each group separately
+    const active = [...filtered.filter(t => !t.done)].sort(sortFn);
+    const done   = [...filtered.filter(t =>  t.done)].sort(sortFn);
+
+    if (active.length === 0 && done.length === 0) {
+      list.innerHTML = '<p class="empty">No tasks here yet ✨</p>';
+      list.style.height = '';
+      return;
+    }
+
+    list.innerHTML =
+      active.map(t => buildTaskHTML(t, isAll)).join('') +
+      (done.length ? '<li class="done-divider" id="done-divider">✅ Completed</li>' : '') +
+      done.map(t => buildTaskHTML(t, isAll)).join('');
+
+    const statsEl = document.getElementById('stats');
+    if (statsEl) {
+      const scopedTasks = isAll ? tasks : tasks.filter(t => t.projectId === currentProject);
+      const total = scopedTasks.length;
+      const doneCount = scopedTasks.filter(t => t.done).length;
+      statsEl.textContent = total ? `${doneCount} of ${total} tasks completed` : '';
+    }
+
+    // Wait for full paint then apply masonry
+    setTimeout(applyMasonry, 30);
+  }
+
+  // ── ARCHIVE ──
+  function archiveDone() {
+    const isAll = currentProject === '__all__';
+    const count = tasks.filter(t => t.done && (isAll || t.projectId === currentProject)).length;
+    if (!count) return;
+    if (!confirm(`Archive ${count} completed task${count>1?'s':''}? They will be hidden but kept in Export.`)) return;
+    tasks.forEach(t => {
+      if (t.done && (isAll || t.projectId === currentProject)) t.archived = true;
+    });
+    saveAll(); renderSidebar(); renderTaskList(); updateSubtitle();
+    showToast(`${count} task${count>1?'s':''} archived`);
+  }
+
+  // ── EXPORT / IMPORT ──
+  function exportData() {
+    const data = { projects, tasks, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'my-todos-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  function importData(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data.tasks || !data.projects) throw new Error();
+        if (!confirm(`Import ${data.projects.length} projects and ${data.tasks.length} tasks? This replaces current data.`)) return;
+        projects = data.projects;
+        tasks    = data.tasks;
+        tasks.forEach(t => {
+    if (!t.subtasks) t.subtasks = [];
+    t.subtasks.forEach(s => { if (!s.dueDate) s.dueDate = ''; });
+    if (!t.recur) t.recur = '';
+    if (t.archived === undefined) t.archived = false;
+  });
+        saveAll(); renderSidebar(); selectProject('__all__');
+        alert('Import successful!');
+      } catch { alert('Invalid file.'); }
+    };
+    reader.readAsText(file); e.target.value = '';
+  }
+
+
+  // ── EDIT MODAL ──
+  let editingTaskId = null;
+
+  function openEditModal(id) {
+    const t = tasks.find(t => t.id === id);
+    if (!t) return;
+    editingTaskId = id;
+    document.getElementById('editText').value     = t.text;
+    document.getElementById('editPriority').value = t.priority || '';
+    document.getElementById('editDueDate').value  = t.dueDate  || '';
+    document.getElementById('editRecur').value    = t.recur    || '';
+    const modal = document.getElementById('editModal');
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('editText').focus(), 50);
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+    editingTaskId = null;
+  }
+
+  function saveEdit() {
+    const t = tasks.find(t => t.id === editingTaskId);
+    if (!t) return;
+    const newText = document.getElementById('editText').value.trim();
+    if (!newText) return;
+    t.text     = newText;
+    t.priority = document.getElementById('editPriority').value;
+    t.dueDate  = document.getElementById('editDueDate').value;
+    t.recur    = document.getElementById('editRecur').value;
+    saveAll(); renderSidebar(); renderTaskList(); updateSubtitle();
+    closeEditModal();
+  }
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeEditModal();
+  });
+
+
+  // ── MASONRY: absolute positioning, left-to-right order, no gaps ──
+  function applyMasonry() {
+    const list = document.getElementById('taskList');
+    if (!list) return;
+    const items   = Array.from(list.querySelectorAll('li.task-item'));
+    const divider = document.getElementById('done-divider');
+    if (!items.length) { list.style.height=''; return; }
+
+    const gap   = 8;
+    const cols  = 2;
+    const listW = list.clientWidth;
+    const colW  = (listW - gap) / cols;
+
+    // Split active and done items
+    const activeItems = items.filter(el => !el.classList.contains('done'));
+    const doneItems   = items.filter(el =>  el.classList.contains('done'));
+
+    const colHeights = [0, 0];
+
+    // Layout active items
+    activeItems.forEach((el, i) => {
+      const col = i % cols;
+      el.style.left  = (col * (colW + gap)) + 'px';
+      el.style.top   = colHeights[col] + 'px';
+      el.style.width = colW + 'px';
+      colHeights[col] += el.offsetHeight + gap;
+    });
+
+    // Place divider below both columns if there are done items
+    let dividerY = 0;
+    if (divider && doneItems.length) {
+      dividerY = Math.max(...colHeights) + 4;
+      divider.style.position = 'absolute';
+      divider.style.top  = dividerY + 'px';
+      divider.style.left = '0';
+      divider.style.right = '0';
+      divider.style.width = '100%';
+      colHeights[0] = dividerY + divider.offsetHeight + gap;
+      colHeights[1] = dividerY + divider.offsetHeight + gap;
+    }
+
+    // Layout done items below divider
+    doneItems.forEach((el, i) => {
+      const col = i % cols;
+      el.style.left  = (col * (colW + gap)) + 'px';
+      el.style.top   = colHeights[col] + 'px';
+      el.style.width = colW + 'px';
+      colHeights[col] += el.offsetHeight + gap;
+    });
+
+    list.style.height = Math.max(...colHeights) + 'px';
+  }
+  // Apply saved preference on load
+  if (localStorage.getItem('darkMode') === '1') {
+    document.body.classList.add('dark');
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('darkToggle');
+      if (btn) btn.textContent = '☀️ Light mode';
+    });
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── BOOT ──
+  window.addEventListener('resize', () => requestAnimationFrame(applyMasonry));
+  renderSidebar();
+  selectProject('__all__');
+</script>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal" style="display:none" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal">
+    <h3>✏️ Edit Task</h3>
+    <div class="modal-field">
+      <label>Task</label>
+      <input type="text" id="editText" />
+    </div>
+    <div class="modal-field">
+      <label>Priority</label>
+      <select id="editPriority">
+        <option value="">None</option>
+        <option value="high">🔴 High</option>
+        <option value="medium">🟡 Medium</option>
+        <option value="low">🟢 Low</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Due Date</label>
+      <input type="date" id="editDueDate" />
+    </div>
+    <div class="modal-field">
+      <label>Repeat</label>
+      <select id="editRecur">
+        <option value="">No repeat</option>
+        <option value="daily">🔁 Daily</option>
+        <option value="weekly">🔁 Weekly</option>
+        <option value="monthly">🔁 Monthly</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="modal-save" onclick="saveEdit()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST UNDO -->
+<div id="toastUndo">
+  <span id="toastMsg">Task deleted</span>
+  <button onclick="undoDelete()">↩ Undo</button>
+</div>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .catch(err => console.log('SW error:', err));
+    });
+  }
+</script>
+</body>
+</html>
